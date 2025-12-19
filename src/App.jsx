@@ -64,10 +64,13 @@ function App() {
 
   return (
     <main className="h-screen w-screen bg-slate-900 text-white relative overflow-hidden">
-      <MapComponent />
-      <EventInput />
       <EventList />
-      {user ? <Logout user={user} logOut={logOut} /> : <Login signIn={signIn} />}
+      <EventInput />
+      {user ? (
+        <Logout user={user} logOut={logOut} />
+      ) : (
+        <Login signIn={signIn} />
+      )}
     </main>
   );
 }

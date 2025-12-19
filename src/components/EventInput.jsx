@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { parseEvent } from '../utils/gemini';
 import { db, auth, firebase } from '../firebase';
+import { collection, getDocs, query } from 'firebase/firestore';
 
 const locationCoords = {
   MAIN_BUILDING: { lat: 13.010909, lng: 74.794371, name: "Main Building" },
@@ -31,7 +32,7 @@ const EventInput = () => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
+  
   const handleSubmit = async () => {
     if (!text.trim()) return;
     if (!auth.currentUser) {
@@ -45,6 +46,15 @@ const EventInput = () => {
       console.log('Parsed Event:', eventData);
       
       if (eventData && eventData.locationId && locationCoords[eventData.locationId]) {
+        if(!eventData.start_time){
+          throw new Error("Event time is missing or invalid.");
+        }
+        if(!eventData.end_time){
+          throw new Error("Event end time is missing or invalid.");
+        }
+        if(!eventData.title){
+          throw new Error("Event title is missing or invalid.");
+        }
         const newEvent = {
           ...eventData,
           coords: locationCoords[eventData.locationId],
@@ -52,7 +62,14 @@ const EventInput = () => {
           createdBy: auth.currentUser.uid,
           createdAt: new Date().toISOString()
         };
-        await db.collection('events').add(newEvent);
+        const querySnapshot=await getDocs(collection(db,'events'));
+        const exists=querySnapshot.docs.some(doc=>{
+          const data=doc.data();
+          return (data.title===newEvent.title && data.start_time===newEvent.start_time && data.locationId===newEvent.locationId);
+        })
+        if (!exists)
+          await db.collection("events").add(newEvent);
+        else throw new Error("Duplicate event. This event already exists.");
         setText('');
       } else {
         setError(`Location not found. Valid locations: DL, LHC, Beach, SJA, CCC, Main Building, Sports Complex, etc.`);

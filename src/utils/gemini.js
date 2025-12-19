@@ -32,8 +32,9 @@ Task:
   - "Pavilion" → "PAVILION"
   - "SJA" / "Silver Jubilee" → "SJA"
   - If location is vague, choose the closest academic building; if still uncertain, use "UNKNOWN".
-5. Extract time if mentioned, otherwise leave as null.
-6. Create a short 1-sentence description.
+5. Extract start and end times and then express them in Date object format, if end time is not mentioned then make it one hour after start time.
+6. Create a short 1-sentence description .
+7. If year is not mentioned assume it's the system current year.
 
 Output JSON ONLY (no markdown):
 {
@@ -42,7 +43,9 @@ Output JSON ONLY (no markdown):
     "locationId": "string (must be one of the IDs listed above)",
     "hasFood": boolean,
     "description": "string",
-    "time": "string or null"
+    "start_time": timestamp,
+    "end_time":timestamp,
+    "club":"string(optional)",
 }
   `;
 
@@ -103,7 +106,11 @@ Output JSON ONLY (no markdown):
       locationId,
       hasFood: parsed.hasFood === true,
       description: parsed.description || "",
-      time: parsed.time || null
+      start_time: parsed.start_time ? new Date(parsed.start_time) : new Date(),
+      end_time: parsed.end_time
+        ? new Date(parsed.end_time)
+        : new Date(Date.now() + 3600000),
+      club:parsed.club || null,
     };
   } catch (error) {
     console.error("Gemini Error:", error);
