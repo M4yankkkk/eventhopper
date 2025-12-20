@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { auth } from './firebase';
-import { GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
 import { db } from './firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
@@ -15,6 +15,7 @@ function App() {
   const [events, setEvents] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState('upcoming');
   const [showAddEvent, setShowAddEvent] = useState(false);
+  const [isSigningIn, setIsSigningIn] = useState(false);
 
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -30,6 +31,24 @@ function App() {
       setUser(user);
     });
     return () => unsubscribe();
+  }, []);
+
+  // Handle redirect result after OAuth redirect
+  useEffect(() => {
+    getRedirectResult(auth).then((result) => {
+      if (result?.user) {
+        const user = result.user;
+        if (!user.email?.endsWith('@nitk.edu.in')) {
+          alert('Only NITK email addresses (@nitk.edu.in) are allowed to sign in.');
+          signOut(auth);
+        }
+      }
+    }).catch((error) => {
+      console.error("Redirect result error:", error);
+      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
+        console.error("Auth error:", error.message);
+      }
+    });
   }, []);
 
   // Fetch events from Firestore
@@ -76,25 +95,54 @@ function App() {
   const selectedEvents = mapping[selectedFilter] || normalizedEvents;
 
   const signIn = async () => {
+    if (isSigningIn) {
+      console.log('Sign in already in progress, ignoring...');
+      return;
+    }
+    
+    setIsSigningIn(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
       hd: 'nitk.edu.in' // Hint to Google to show only NITK accounts
     });
     try {
-      const result = await signInWithPopup(auth, provider);
-      const user = result.user;
+      console.log('Starting sign in...');
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
       
-      // Verify email domain
-      if (!user.email?.endsWith('@nitk.edu.in')) {
-        alert('Only NITK email addresses (@nitk.edu.in) are allowed to sign in.');
-        await signOut(auth);
-        return;
+      if (isMobile) {
+        // Use redirect on mobile
+        console.log('Using redirect auth for mobile');
+        await signInWithRedirect(auth, provider);
+      } else {
+        // Use popup on desktop
+        console.log('Using popup auth for desktop');
+        const result = await signInWithPopup(auth, provider);
+        console.log('Sign in successful:', result.user);
+        const user = result.user;
+        
+        // Verify email domain
+        if (!user.email?.endsWith('@nitk.edu.in')) {
+          alert('Only NITK email addresses (@nitk.edu.in) are allowed to sign in.');
+          await signOut(auth);
+          return;
+        }
       }
     } catch (error) {
       console.error("Error signing in: ", error);
-      if (error.code !== 'auth/popup-closed-by-user') {
-        alert('Sign in failed. Please try again.');
+      console.error("Error code:", error.code);
+      console.error("Error message:", error.message);
+      if (error.code === 'auth/popup-blocked') {
+        alert('Popup was blocked. Please allow popups for this site and try again.');
+      } else if (error.code === 'auth/unauthorized-domain') {
+        alert('This domain is not authorized. Please add it to Firebase authorized domains.');
+      } else if (error.code === 'auth/cancelled-popup-request') {
+        // Silently ignore cancelled popup - user likely clicked multiple times
+        console.log('Popup cancelled - ignoring');
+      } else if (error.code !== 'auth/popup-closed-by-user') {
+        console.error(`Sign in error: ${error.message}`);
       }
+    } finally {
+      setIsSigningIn(false);
     }
   };
 
@@ -121,7 +169,9 @@ function App() {
                 <button onClick={logOut} className="rounded-lg bg-red-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-red-500">Logout</button>
               </>
             ) : (
-              <button onClick={signIn} className="rounded-lg bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500">Sign in</button>
+              <button onClick={signIn} className="rounded-lg bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed" disabled={isSigningIn}>
+                {isSigningIn ? 'Signing in...' : 'Sign in'}
+              </button>
             )}
           </div>
         </div>
