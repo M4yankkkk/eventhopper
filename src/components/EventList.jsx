@@ -21,7 +21,7 @@ const EventList = () => {
     <div className={`
       absolute bottom-0 left-0 right-0
       transition-all duration-500 ease-in-out
-      ${isOpen ? 'h-3/4' : 'h-20'}
+      ${isOpen ? 'h-[60vh] sm:h-3/4' : 'h-16 sm:h-20'}
       bg-slate-800/60 backdrop-blur-md 
       rounded-t-2xl shadow-lg border-t border-slate-700
     `}>
