@@ -8,6 +8,15 @@ const MapComponent = ({events}) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const position = { lat: 13.01085, lng: 74.79250 };
   const mapId = import.meta.env.VITE_GOOGLE_MAPS_MAP_ID;
+  
+  // Debug logging
+  useEffect(() => {
+    if (events && events.length > 0) {
+      console.log('MapComponent received events:', events);
+      console.log('First event structure:', events[0]);
+      console.log('First event coords:', events[0].coords);
+    }
+  }, [events]);
   // Bound the map to NITK Surathkal campus and beach area
   const mapBounds = {
     north: 13.0148,
@@ -45,30 +54,64 @@ const MapComponent = ({events}) => {
   // When mapId is provided, styles must be set in Google Cloud console; avoid passing styles prop to suppress warning.
   const maybeStyles = mapId ? {} : { styles: mapStyles };
 
+  const formatDateTime = (value) => {
+    if (!value) return '';
+    const d = typeof value.toDate === 'function' ? value.toDate() : value instanceof Date ? value : null;
+    if (!d) return '';
+    return d.toLocaleString([], {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
   return (
     <>
       <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY}>
-        <Map
-          defaultCenter={position}
-          defaultZoom={16}
-          defaultTilt={60}
-          defaultHeading={0}
-          mapId={mapId}
-          gestureHandling={"greedy"}
-          disableDefaultUI={true}
-          options={mapOptions}
-          {...maybeStyles}
-          onClick={() => setSelectedEvent(null)}
-        >
-          {events.map((event) => (
-            <BeaconMarker
-              key={event.id}
-              event={event}
-              isSelected={selectedEvent?.id === event.id}
-              onSelect={() => setSelectedEvent(event)}
-            />
-          ))}
-        </Map>
+        <div style={{ width: '100%', height: '100%' }}>
+          <Map
+            defaultCenter={position}
+            defaultZoom={16}
+            defaultTilt={60}
+            defaultHeading={0}
+            mapId={mapId}
+            gestureHandling={"greedy"}
+            disableDefaultUI={true}
+            options={mapOptions}
+            {...maybeStyles}
+            onClick={() => setSelectedEvent(null)}
+          >
+          {events && events.map((event) => {
+            // Reconstruct coords from latitude/longitude
+            let coords = event.coords;
+            if (!coords && event.latitude && event.longitude) {
+              coords = { lat: event.latitude, lng: event.longitude };
+            }
+            
+            if (!coords || !coords.lat || !coords.lng) {
+              console.warn('Event missing coordinates:', event);
+              return null;
+            }
+            
+            const normalized = {
+              ...event,
+              coords,
+            };
+
+            return (
+              <BeaconMarker
+                key={event.id}
+                event={normalized}
+                isSelected={selectedEvent?.id === event.id}
+                onSelect={() => setSelectedEvent(normalized)}
+              />
+            );
+          })}
+          </Map>
+        </div>
 
         {/* Event Detail Card */}
         {selectedEvent && (
@@ -110,19 +153,13 @@ const MapComponent = ({events}) => {
                   </span>
                 </div>
 
-                {selectedEvent.start_time && (
-                  <div className="flex items-center gap-2 text-slate-700">
+                {(selectedEvent.start_time || selectedEvent.end_time) && (
+                  <div className="flex items-start gap-2 text-slate-700">
                     <span className="text-lg">⏰</span>
-                    <span>
-                      {selectedEvent.start_time?.toDate().toLocaleString([], {
-                        day: "numeric",
-                        month: "long",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                        hour12: true, // optional: use 12‑hour format with AM/PM
-                      })}
-                    </span>
+                    <div className="flex flex-col text-sm text-slate-700">
+                      {selectedEvent.start_time && <span>Starts: {formatDateTime(selectedEvent.start_time)}</span>}
+                      {selectedEvent.end_time && <span>Ends: {formatDateTime(selectedEvent.end_time)}</span>}
+                    </div>
                   </div>
                 )}
 

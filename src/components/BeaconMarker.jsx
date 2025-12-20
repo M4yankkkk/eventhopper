@@ -36,6 +36,13 @@ const categoryConfig = {
 
 const BeaconMarker = ({ event, isSelected, onSelect }) => {
   const { category, coords, title, hasFood } = event;
+  
+  // Validate coords
+  if (!coords || typeof coords !== 'object' || !coords.lat || !coords.lng) {
+    console.error('Invalid coords in BeaconMarker:', coords, event);
+    return null;
+  }
+  
   const config = hasFood ? {
     icon: <UtensilsCrossed size={18} />,
     color: 'bg-yellow-400',

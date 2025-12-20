@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { parseEvent } from '../utils/gemini';
-import { db, auth, firebase } from '../firebase';
-import { collection, getDocs, query } from 'firebase/firestore';
+import { db, auth } from '../firebase';
+import { collection, getDocs, query, addDoc, serverTimestamp } from 'firebase/firestore';
 
 const locationCoords = {
   MAIN_BUILDING: { lat: 13.010909, lng: 74.794371, name: "Main Building" },
@@ -28,7 +28,7 @@ const locationCoords = {
 // Export for use in other components
 export { locationCoords };
 
-const EventInput = () => {
+const EventInput = ({ onClose = () => {} }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -57,8 +57,10 @@ const EventInput = () => {
         }
         const newEvent = {
           ...eventData,
-          coords: locationCoords[eventData.locationId],
-          timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+          latitude: locationCoords[eventData.locationId].lat,
+          longitude: locationCoords[eventData.locationId].lng,
+          locationName: locationCoords[eventData.locationId].name,
+          timestamp: serverTimestamp(),
           createdBy: auth.currentUser.uid,
           createdAt: new Date().toISOString()
         };
@@ -68,9 +70,10 @@ const EventInput = () => {
           return (data.title===newEvent.title && data.start_time===newEvent.start_time && data.locationId===newEvent.locationId);
         })
         if (!exists)
-          await db.collection("events").add(newEvent);
+          await addDoc(collection(db, "events"), newEvent);
         else throw new Error("Duplicate event. This event already exists.");
         setText('');
+        onClose(); // Close modal on success
       } else {
         setError(`Location not found. Valid locations: DL, LHC, Beach, SJA, CCC, Main Building, Sports Complex, etc.`);
       }
@@ -83,23 +86,23 @@ const EventInput = () => {
   };
 
   return (
-    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] max-w-xl md:w-1/3 p-3 md:p-4 bg-slate-800/60 backdrop-blur-md rounded-xl shadow-lg border border-slate-700">
+    <div className="w-full">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={auth.currentUser ? "Paste event message: 'Hackathon at Digital Library with free pizza!'" : "Please sign in to add events"}
-        className="w-full h-20 md:h-24 p-2 bg-transparent text-white placeholder-slate-400 rounded-lg resize-none focus:outline-none"
+        className="w-full h-32 p-3 bg-slate-100 text-slate-900 placeholder-slate-500 rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-indigo-500 border border-slate-300"
         disabled={loading || !auth.currentUser}
         onKeyDown={(e) => e.key === 'Enter' && e.ctrlKey && handleSubmit()}
       />
       <button
         onClick={handleSubmit}
-        className="w-full mt-2 p-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors disabled:bg-gray-500"
+        className="w-full mt-4 p-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed shadow-md"
         disabled={loading || !auth.currentUser}
       >
         {loading ? 'Analyzing...' : 'Add Event'}
       </button>
-      {error && <p className="mt-2 text-sm text-red-400">{error}</p>}
+      {error && <p className="mt-3 text-sm text-red-600 bg-red-50 p-2 rounded">{error}</p>}
     </div>
   );
 };
