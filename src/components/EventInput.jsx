@@ -83,12 +83,12 @@ const EventInput = () => {
   };
 
   return (
-    <div className="absolute top-4 left-1/2 -translate-x-1/2 w-11/12 md:w-1/3 p-3 bg-slate-800/60 backdrop-blur-md rounded-xl shadow-lg border border-slate-700">
+    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[94%] max-w-xl md:w-1/3 p-3 md:p-4 bg-slate-800/60 backdrop-blur-md rounded-xl shadow-lg border border-slate-700">
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}
         placeholder={auth.currentUser ? "Paste event message: 'Hackathon at Digital Library with free pizza!'" : "Please sign in to add events"}
-        className="w-full h-24 p-2 bg-transparent text-white placeholder-slate-400 rounded-lg resize-none focus:outline-none"
+        className="w-full h-20 md:h-24 p-2 bg-transparent text-white placeholder-slate-400 rounded-lg resize-none focus:outline-none"
         disabled={loading || !auth.currentUser}
         onKeyDown={(e) => e.key === 'Enter' && e.ctrlKey && handleSubmit()}
       />
