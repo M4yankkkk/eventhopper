@@ -1,7 +1,23 @@
 const VALID_LOCATIONS = [
-  "MAIN_BUILDING", "LHC_A", "LHC_B", "LHC_C", "CCC", "DIGITAL_LIBRARY", "LIBRARY",
-  "SPORTS_COMPLEX", "OSC", "PAVILION", "MAIN_GROUND", "NSC_AREA", "MEGA_TOWER", "ATB",
-  "SJA", "GUEST_HOUSE", "BEACH", "LIGHTHOUSE", "UNKNOWN"
+  "MAIN_BUILDING",
+  "LHC_A",
+  "LHC_B",
+  "LHC_C",
+  "CCC",
+  "DIGITAL_LIBRARY",
+  "LIBRARY",
+  "SPORTS_COMPLEX",
+  "OSC",
+  "PAVILION",
+  "MAIN_GROUND",
+  "NSC_AREA",
+  "MEGA_TOWER",
+  "ATB",
+  "SJA",
+  "GUEST_HOUSE",
+  "BEACH",
+  "LIGHTHOUSE",
+  "UNKNOWN",
 ];
 
 const VALID_CATEGORIES = ["TECH", "CULTURAL", "SPORTS", "WORKSHOP", "OTHER"];
@@ -9,9 +25,11 @@ const VALID_CATEGORIES = ["TECH", "CULTURAL", "SPORTS", "WORKSHOP", "OTHER"];
 const parseEvent = async (text) => {
   const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-  
+  const now = new Date();
+  const currentDateString = now.toDateString();
   const prompt = `
 You are an AI assistant for NITK Surathkal campus events.
+Current System Date:"${currentDateString}",
 Analyze this text: "${text}"
 
 Task:
@@ -32,7 +50,7 @@ Task:
   - "Pavilion" → "PAVILION"
   - "SJA" / "Silver Jubilee" → "SJA"
   - If location is vague, choose the closest academic building; if still uncertain, use "UNKNOWN".
-5. Extract start and end times and then express them in Date object format, if end time is not mentioned then make it one hour after start time.
+5. Don't invent start_time and end_time .Extract start and end times from the text(if start time is not mentioned then make start time and end time both as null ans if end time is not mentioned then make it one hour after start time) and then express them in Date object format.
 6. Create a short 1-sentence description .
 7. If year is not mentioned assume it's the system current year.
 
@@ -43,40 +61,61 @@ Output JSON ONLY (no markdown):
     "locationId": "string (must be one of the IDs listed above)",
     "hasFood": boolean,
     "description": "string",
-    "start_time": timestamp,
-    "end_time":timestamp,
+    "start_time": timestamp || null,
+    "end_time":timestamp || null,
     "club":"string(optional)",
 }
   `;
 
   try {
     const response = await fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         contents: [{ parts: [{ text: prompt }] }],
         safetySettings: [
-          { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_ONLY_HIGH" },
-          { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_ONLY_HIGH" }
-        ]
-      })
+          {
+            category: "HARM_CATEGORY_HARASSMENT",
+            threshold: "BLOCK_ONLY_HIGH",
+          },
+          {
+            category: "HARM_CATEGORY_HATE_SPEECH",
+            threshold: "BLOCK_ONLY_HIGH",
+          },
+          {
+            category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+            threshold: "BLOCK_ONLY_HIGH",
+          },
+          {
+            category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+            threshold: "BLOCK_ONLY_HIGH",
+          },
+        ],
+      }),
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error?.message || `API Error: ${response.status} ${response.statusText}`);
+      throw new Error(
+        errorData.error?.message ||
+          `API Error: ${response.status} ${response.statusText}`
+      );
     }
-    
+
     const data = await response.json();
-    
+
     if (!data.candidates || data.candidates.length === 0) {
       if (data.promptFeedback) {
         console.error("Safety/Prompt Feedback:", data.promptFeedback);
-        throw new Error(`Gemini blocked the prompt. Reason: ${JSON.stringify(data.promptFeedback)}`);
+        throw new Error(
+          `Gemini blocked the prompt. Reason: ${JSON.stringify(
+            data.promptFeedback
+          )}`
+        );
       }
-      throw new Error("Gemini API returned an empty response. Check your API key and permissions.");
+      throw new Error(
+        "Gemini API returned an empty response. Check your API key and permissions."
+      );
     }
 
     if (!data.candidates[0].content) {
@@ -88,16 +127,27 @@ Output JSON ONLY (no markdown):
     const parsed = JSON.parse(jsonStr);
 
     // Validate and normalize
-    const category = VALID_CATEGORIES.includes(parsed.category?.toUpperCase()) 
-      ? parsed.category.toUpperCase() 
+    const category = VALID_CATEGORIES.includes(parsed.category?.toUpperCase())
+      ? parsed.category.toUpperCase()
       : "OTHER";
-    
-    const locationId = VALID_LOCATIONS.includes(parsed.locationId) 
-      ? parsed.locationId 
+
+    const locationId = VALID_LOCATIONS.includes(parsed.locationId)
+      ? parsed.locationId
       : null;
 
     if (!locationId) {
-      throw new Error(`Invalid location: ${parsed.locationId}. Must be one of: ${VALID_LOCATIONS.join(", ")}`);
+      throw new Error(
+        `Invalid location: ${
+          parsed.locationId
+        }. Must be one of: ${VALID_LOCATIONS.join(", ")}`
+      );
+    }
+    const startTime = parsed.start_time ? new Date(parsed.start_time) : null;
+    let endTime = parsed.end_time ? new Date(parsed.end_time) : null;
+
+    // adding 1 hour if end time is not given
+    if (startTime && !endTime) {
+      endTime = new Date(startTime.getTime() + 3600000);
     }
 
     return {
@@ -106,11 +156,9 @@ Output JSON ONLY (no markdown):
       locationId,
       hasFood: parsed.hasFood === true,
       description: parsed.description || "",
-      start_time: parsed.start_time ? new Date(parsed.start_time) : new Date(),
-      end_time: parsed.end_time
-        ? new Date(parsed.end_time)
-        : new Date(Date.now() + 3600000),
-      club:parsed.club || null,
+      start_time: startTime,
+      end_time: endTime,
+      club: parsed.club || null,
     };
   } catch (error) {
     console.error("Gemini Error:", error);

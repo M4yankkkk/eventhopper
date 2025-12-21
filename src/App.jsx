@@ -1,19 +1,26 @@
-import { useState, useEffect } from 'react';
-import { auth } from './firebase';
-import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signOut } from 'firebase/auth';
-import { db } from './firebase';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { Link } from 'react-router-dom';
-import { Plus, X } from 'lucide-react';
-import Logo from './assets/Logo.svg';
-import MapComponent from './components/MapComponent';
-import EventInput from './components/EventInput';
-import EventList from './components/EventList';
+import { useState, useEffect } from "react";
+import { auth } from "./firebase";
+import {
+  GoogleAuthProvider,
+  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
+  signOut,
+} from "firebase/auth";
+import { db } from "./firebase";
+import { collection, query, orderBy, onSnapshot,writeBatch,doc } from "firebase/firestore";
+import { Link } from "react-router-dom";
+import { Plus, X } from "lucide-react";
+import Logo from "./assets/Logo.svg";
+import MapComponent from "./components/MapComponent";
+import EventInput from "./components/EventInput";
+import EventList from "./components/EventList";
 
 function App() {
+  const NUMBER_OF_EVENTS=5;
   const [user, setUser] = useState(null);
   const [events, setEvents] = useState([]);
-  const [selectedFilter, setSelectedFilter] = useState('upcoming');
+  const [selectedFilter, setSelectedFilter] = useState("upcoming");
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
 
@@ -21,8 +28,10 @@ function App() {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
         // Check if email domain is @nitk.edu.in
-        if (!user.email?.endsWith('@nitk.edu.in')) {
-          alert('Access restricted to NITK email addresses only (@nitk.edu.in)');
+        if (!user.email?.endsWith("@nitk.edu.in")) {
+          alert(
+            "Access restricted to NITK email addresses only (@nitk.edu.in)"
+          );
           await signOut(auth);
           setUser(null);
           return;
@@ -35,29 +44,75 @@ function App() {
 
   // Handle redirect result after OAuth redirect
   useEffect(() => {
-    getRedirectResult(auth).then((result) => {
-      if (result?.user) {
-        const user = result.user;
-        if (!user.email?.endsWith('@nitk.edu.in')) {
-          alert('Only NITK email addresses (@nitk.edu.in) are allowed to sign in.');
-          signOut(auth);
+    getRedirectResult(auth)
+      .then((result) => {
+        if (result?.user) {
+          const user = result.user;
+          if (!user.email?.endsWith("@nitk.edu.in")) {
+            alert(
+              "Only NITK email addresses (@nitk.edu.in) are allowed to sign in."
+            );
+            signOut(auth);
+          }
         }
-      }
-    }).catch((error) => {
-      console.error("Redirect result error:", error);
-      if (error.code !== 'auth/popup-closed-by-user' && error.code !== 'auth/cancelled-popup-request') {
-        console.error("Auth error:", error.message);
-      }
-    });
+      })
+      .catch((error) => {
+        console.error("Redirect result error:", error);
+        if (
+          error.code !== "auth/popup-closed-by-user" &&
+          error.code !== "auth/cancelled-popup-request"
+        ) {
+          console.error("Auth error:", error.message);
+        }
+      });
   }, []);
 
   // Fetch events from Firestore
   useEffect(() => {
-    const q = query(collection(db, 'events'), orderBy('timestamp', 'desc'));
-    const unsubscribe = onSnapshot(q, snapshot => {
-      const eventsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setEvents(eventsData);
+    const q = query(collection(db, "events"), orderBy("timestamp", "desc"));
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const eventsData = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      const snapshotNow = new Date();
+      const locations = {};
+      eventsData.forEach((event) => {
+        if (!locations[event.locationId]) locations[event.locationId] = 0;
+        locations[event.locationId]++;
+      });
+      const toKeep = [];
+      const toDelete = eventsData.filter((e) => {
+        const oneWeekLater = new Date(
+          e.end_time?.toDate().getTime() + 7 * 24 * 60 * 60 * 1000
+        );
+        if (oneWeekLater >= snapshotNow || locations[e.locationId] < NUMBER_OF_EVENTS) toKeep.push(e);
+        return oneWeekLater < snapshotNow && locations[e.locationId] >= NUMBER_OF_EVENTS;
+      });
+      const lastCleanup = localStorage.getItem("last_delete_run");
+      if (
+        toDelete.length > 0 &&
+        (!lastCleanup || Date.now() - parseInt(lastCleanup) > 3600000)
+      ) {
+        // 1 hour buffer
+        const batch = writeBatch(db);
+
+        // Only delete up to 500 at a time (Firestore limit)
+        toDelete.slice(0, 500).forEach((ev) => {
+          batch.delete(doc(db, "events", ev.id));
+        });
+
+        try {
+          await batch.commit();
+          localStorage.setItem("last_delete_run", Date.now().toString());
+          console.log(`Deleted ${toDelete.length} stale documents.`);
+        } catch (err) {
+          console.error("Cleanup failed:", err);
+        }
+      }
+      setEvents(toKeep);
     });
+    //remove stale data from events
 
     return () => unsubscribe();
   }, []);
@@ -67,7 +122,7 @@ function App() {
   const normalizedEvents = events.map((event) => {
     const normalize = (ts) => {
       if (!ts) return null;
-      if (typeof ts.toDate === 'function') return ts.toDate();
+      if (typeof ts.toDate === "function") return ts.toDate();
       if (ts instanceof Date) return ts;
       return null;
     };
@@ -78,11 +133,17 @@ function App() {
     };
   });
 
-  const upcomingEvents = normalizedEvents.filter((e) => e.start_time && e.start_time >= now);
+  const upcomingEvents = normalizedEvents.filter(
+    (e) => e.start_time && e.start_time >= now
+  );
   const ongoingEvents = normalizedEvents.filter(
     (e) => e.start_time && e.end_time && e.start_time < now && e.end_time >= now
   );
-  const pastEvents = normalizedEvents.filter((e) => e.end_time && e.end_time < now);
+  //past events
+  const pastEvents = normalizedEvents.filter(
+    (e) => e.end_time && e.end_time < now
+  );
+
   const foodEvents = normalizedEvents.filter((e) => e.hasFood);
 
   const mapping = {
@@ -96,33 +157,38 @@ function App() {
 
   const signIn = async () => {
     if (isSigningIn) {
-      console.log('Sign in already in progress, ignoring...');
+      console.log("Sign in already in progress, ignoring...");
       return;
     }
-    
+
     setIsSigningIn(true);
     const provider = new GoogleAuthProvider();
     provider.setCustomParameters({
-      hd: 'nitk.edu.in' // Hint to Google to show only NITK accounts
+      hd: "nitk.edu.in", // Hint to Google to show only NITK accounts
     });
     try {
-      console.log('Starting sign in...');
-      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-      
+      console.log("Starting sign in...");
+      const isMobile =
+        /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
+          navigator.userAgent
+        );
+
       if (isMobile) {
         // Use redirect on mobile
-        console.log('Using redirect auth for mobile');
+        console.log("Using redirect auth for mobile");
         await signInWithRedirect(auth, provider);
       } else {
         // Use popup on desktop
-        console.log('Using popup auth for desktop');
+        console.log("Using popup auth for desktop");
         const result = await signInWithPopup(auth, provider);
-        console.log('Sign in successful:', result.user);
+        console.log("Sign in successful:", result.user);
         const user = result.user;
-        
+
         // Verify email domain
-        if (!user.email?.endsWith('@nitk.edu.in')) {
-          alert('Only NITK email addresses (@nitk.edu.in) are allowed to sign in.');
+        if (!user.email?.endsWith("@nitk.edu.in")) {
+          alert(
+            "Only NITK email addresses (@nitk.edu.in) are allowed to sign in."
+          );
           await signOut(auth);
           return;
         }
@@ -131,14 +197,18 @@ function App() {
       console.error("Error signing in: ", error);
       console.error("Error code:", error.code);
       console.error("Error message:", error.message);
-      if (error.code === 'auth/popup-blocked') {
-        alert('Popup was blocked. Please allow popups for this site and try again.');
-      } else if (error.code === 'auth/unauthorized-domain') {
-        alert('This domain is not authorized. Please add it to Firebase authorized domains.');
-      } else if (error.code === 'auth/cancelled-popup-request') {
+      if (error.code === "auth/popup-blocked") {
+        alert(
+          "Popup was blocked. Please allow popups for this site and try again."
+        );
+      } else if (error.code === "auth/unauthorized-domain") {
+        alert(
+          "This domain is not authorized. Please add it to Firebase authorized domains."
+        );
+      } else if (error.code === "auth/cancelled-popup-request") {
         // Silently ignore cancelled popup - user likely clicked multiple times
-        console.log('Popup cancelled - ignoring');
-      } else if (error.code !== 'auth/popup-closed-by-user') {
+        console.log("Popup cancelled - ignoring");
+      } else if (error.code !== "auth/popup-closed-by-user") {
         console.error(`Sign in error: ${error.message}`);
       }
     } finally {
@@ -165,12 +235,25 @@ function App() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <img src={user.photoURL} alt={user.displayName} className="h-8 w-8 rounded-full border-2 border-indigo-500" />
-                <button onClick={logOut} className="rounded-lg bg-red-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-red-500">Logout</button>
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  className="h-8 w-8 rounded-full border-2 border-indigo-500"
+                />
+                <button
+                  onClick={logOut}
+                  className="rounded-lg bg-red-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-red-500"
+                >
+                  Logout
+                </button>
               </>
             ) : (
-              <button onClick={signIn} className="rounded-lg bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed" disabled={isSigningIn}>
-                {isSigningIn ? 'Signing in...' : 'Sign in'}
+              <button
+                onClick={signIn}
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 disabled:bg-indigo-400 disabled:cursor-not-allowed"
+                disabled={isSigningIn}
+              >
+                {isSigningIn ? "Signing in..." : "Sign in"}
               </button>
             )}
           </div>
@@ -205,7 +288,9 @@ function App() {
             >
               <X size={20} />
             </button>
-            <h2 className="text-2xl font-bold text-slate-900 mb-4">Add New Event</h2>
+            <h2 className="text-2xl font-bold text-slate-900 mb-4">
+              Add New Event
+            </h2>
             <EventInput onClose={() => setShowAddEvent(false)} />
           </div>
         </div>
@@ -215,4 +300,3 @@ function App() {
 }
 
 export default App;
-
