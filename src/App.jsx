@@ -8,7 +8,14 @@ import {
   signOut,
 } from "firebase/auth";
 import { db } from "./firebase";
-import { collection, query, orderBy, onSnapshot,writeBatch,doc } from "firebase/firestore";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+  writeBatch,
+  doc,
+} from "firebase/firestore";
 import { Link } from "react-router-dom";
 import { Plus, X } from "lucide-react";
 import Logo from "./assets/Logo.svg";
@@ -17,13 +24,13 @@ import EventInput from "./components/EventInput";
 import EventList from "./components/EventList";
 
 function App() {
-  const NUMBER_OF_EVENTS=5;
+  const NUMBER_OF_EVENTS = 5;
   const [user, setUser] = useState(null);
   const [events, setEvents] = useState([]);
   const [selectedFilter, setSelectedFilter] = useState("upcoming");
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
-
+  const [club,setClub]=useState("ALL");
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
       if (user) {
@@ -86,8 +93,15 @@ function App() {
         const oneWeekLater = new Date(
           e.end_time?.toDate().getTime() + 7 * 24 * 60 * 60 * 1000
         );
-        if (oneWeekLater >= snapshotNow || locations[e.locationId] < NUMBER_OF_EVENTS) toKeep.push(e);
-        return oneWeekLater < snapshotNow && locations[e.locationId] >= NUMBER_OF_EVENTS;
+        if (
+          oneWeekLater >= snapshotNow ||
+          locations[e.locationId] < NUMBER_OF_EVENTS
+        )
+          toKeep.push(e);
+        return (
+          oneWeekLater < snapshotNow &&
+          locations[e.locationId] >= NUMBER_OF_EVENTS
+        );
       });
       const lastCleanup = localStorage.getItem("last_delete_run");
       if (
@@ -153,7 +167,9 @@ function App() {
     food: foodEvents,
   };
 
-  const selectedEvents = mapping[selectedFilter] || normalizedEvents;
+  const e = mapping[selectedFilter] || normalizedEvents;
+  const selectedEvents =
+    club == "ALL" ? e : e.filter((event) => event.club === club);
 
   const signIn = async () => {
     if (isSigningIn) {
@@ -266,6 +282,8 @@ function App() {
         selected={selectedFilter}
         setSelected={setSelectedFilter}
         mapping={mapping}
+        club={club}
+        setClub={setClub}
       />
 
       {/* Floating Add Button */}
