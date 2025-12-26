@@ -71,9 +71,8 @@ export default function Dashboard({
         <div className="flex items-center gap-2 text-slate-700">
           <Calendar size={16} className="text-blue-600 flex-shrink-0" />
           <span className="text-sm">
-            {formatDateTime(event.start_time)} •{" "}
-            {formatDateTime(event.start_time)}
-            {event.end_time && ` - ${formatDateTime(event.end_time)}`}
+            {formatDateTime(event.start_time)}  to{" "}
+            {formatDateTime(event.end_time)}
           </span>
         </div>
 
