@@ -8,8 +8,6 @@ export default function Dashboard({
   ongoingEvents,
   pastEvents,
   setDashboard=()=>{},
-  onEdit=true,
-  onDelete=true,
 }) {
   const [activeFilter, setActiveFilter] = useState("upcoming"); 
 
@@ -18,7 +16,7 @@ export default function Dashboard({
     ongoing: ongoingEvents,
     past: pastEvents,
   }
-   const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
   const displayedEvents = filterMap[activeFilter]
   const allEvents = [...upcomingEvents, ...ongoingEvents, ...pastEvents]
   async function handleDelete(){
@@ -71,7 +69,7 @@ export default function Dashboard({
         <div className="flex items-center gap-2 text-slate-700">
           <Calendar size={16} className="text-blue-600 flex-shrink-0" />
           <span className="text-sm">
-            {formatDateTime(event.start_time)}  to{" "}
+            {formatDateTime(event.start_time)} to{" "}
             {formatDateTime(event.end_time)}
           </span>
         </div>
@@ -83,10 +81,12 @@ export default function Dashboard({
           </span>
         </div>
 
-        <div className="flex items-center gap-2 text-slate-700">
-          <Users size={16} className="text-blue-600 flex-shrink-0" />
-          <span className="text-sm font-medium">{event.club}</span>
-        </div>
+        {event.club && (
+          <div className="flex items-center gap-2 text-slate-700">
+            <Users size={16} className="text-blue-600 flex-shrink-0" />
+            <span className="text-sm font-medium">{event.club}</span>
+          </div>
+        )}
 
         {event.hasFood && (
           <div className="flex items-center gap-2 text-slate-700">
@@ -99,16 +99,7 @@ export default function Dashboard({
       </div>
 
       <div className="flex gap-2 pt-3 border-t border-slate-200">
-        {onEdit && activeFilter === "upcoming" && (
-          <button
-            onClick={() => onEdit(event.id)}
-            className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded font-medium text-sm transition-colors"
-          >
-            <Edit size={16} />
-            Edit
-          </button>
-        )}
-        {onDelete && activeFilter === "upcoming" && (
+        {activeFilter === "upcoming" && (
           <button
             onClick={() => setDeleteConfirmId(event.id)}
             className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-red-50 text-red-600 hover:bg-red-100 rounded font-medium text-sm transition-colors"

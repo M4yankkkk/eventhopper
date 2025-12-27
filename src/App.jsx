@@ -45,6 +45,7 @@ function App() {
           return;
         }
       }
+      console.log(user);
       setUser(user);
     });
     return () => unsubscribe();
@@ -241,10 +242,10 @@ function App() {
     }
   };
 
-  if(dashboard){
-    const upEvents = upcomingEvents.filter((e) =>{return e.createdBy == user.email;});
-    const pstEvents=pastEvents.filter((e)=>{return e.createdBy==user.email});
-    const onEvents=ongoingEvents.filter((e)=>{return e.createdBy==user.email});
+  if(dashboard && user){
+    const upEvents = upcomingEvents.filter((e) =>{return e.createdBy == user.uid;});
+    const pstEvents=pastEvents.filter((e)=>{return e.createdBy==user.uid});
+    const onEvents=ongoingEvents.filter((e)=>{return e.createdBy==user.uid});
     return <Dashboard user={user} upcomingEvents={upEvents} ongoingEvents={onEvents} pastEvents={pstEvents} setDashboard={setDashboard}/>
   }
 

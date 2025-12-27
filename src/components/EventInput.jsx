@@ -66,12 +66,11 @@ const EventInput = ({ onClose = () => {} }) => {
           timestamp: serverTimestamp(),
           createdBy: auth.currentUser.uid,
           createdAt: new Date().toISOString(),
-          createdBy: user.email,
         };
         const querySnapshot=await getDocs(collection(db,'events'));
         const exists=querySnapshot.docs.some(doc=>{
           const data=doc.data();
-          return (data.title===newEvent.title && data.start_time===newEvent.start_time && data.locationId===newEvent.locationId);
+          return (data.title===newEvent.title && data.start_time===newEvent.start_time && data.end_time===newEvent.end_time && data.locationId===newEvent.locationId);
         })
         if (!exists)
           await addDoc(collection(db, "events"), newEvent);

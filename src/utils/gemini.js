@@ -50,7 +50,7 @@ Task:
   - "Pavilion" → "PAVILION"
   - "SJA" / "Silver Jubilee" → "SJA"
   - If location is vague, choose the closest academic building; if still uncertain, use "UNKNOWN".
-5. Don't invent start_time and end_time .Extract start and end times from the text(if start time is not mentioned then make start time and end time both as null ans if end time is not mentioned then make it one hour after start time) and then express them in Date object format.
+5. Don't invent start_time and end_time .Extract start and end times from the text (if start time is not mentioned then make start time and end time both as null ) and then express them in Date object format.
 6. Create a short 1-sentence description .
 7. If year is not mentioned assume it's the system current year.
 
