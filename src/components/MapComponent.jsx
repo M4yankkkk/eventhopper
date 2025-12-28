@@ -170,6 +170,20 @@ const MapComponent = ({events}) => {
                   </div>
                 )}
 
+                {selectedEvent.registrationLink && (
+                  <div className="flex items-center gap-2 text-slate-700">
+                    <span className="text-lg">🔗</span>
+                    <a
+                      href={selectedEvent.registrationLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-indigo-600 hover:text-indigo-800 font-semibold underline text-sm"
+                    >
+                      Register Now
+                    </a>
+                  </div>
+                )}
+
                 <div className="mt-4 pt-4 border-t border-slate-200">
                   <p className="text-slate-600 leading-relaxed">
                     {selectedEvent.description}

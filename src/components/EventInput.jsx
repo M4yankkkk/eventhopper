@@ -7,7 +7,7 @@ import { getAuth } from "firebase/auth";
 const locationCoords = {
   MAIN_BUILDING: { lat: 13.010909, lng: 74.794371, name: "Main Building" },
   LHC_A: { lat: 13.009500, lng: 74.793835, name: "LHC Block A" },
-  LHC_B: { lat: 13.01120, lng: 74.79340, name: "LHC Block B" },
+  LHC_D: { lat: 13.009737, lng: 74.793389, name: "LHC Block D" },
   LHC_C: { lat: 13.010464, lng: 74.792304, name: "LHC Block C" },
   CCC: { lat: 13.009468, lng: 74.795761, name: "CCC (Computer Center)" },
   DIGITAL_LIBRARY: { lat: 13.010036, lng: 74.794829, name: "Digital Library" },
@@ -33,9 +33,7 @@ const EventInput = ({ onClose = () => {} }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const auth = getAuth();
-  const user = auth.currentUser;
-  if(!user) throw new Error("You need to log in to post events");
+  
   const handleSubmit = async () => {
     if (!text.trim()) return;
     if (!auth.currentUser) {
@@ -58,19 +56,9 @@ const EventInput = ({ onClose = () => {} }) => {
         if(!eventData.title){
           throw new Error("Event title is missing or invalid.");
         }
-        // Normalize timestamps: subtract 5.5 hours to account for IST offset
-        const IST_OFFSET = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
-        const normalizedStartTime = eventData.start_time 
-          ? new Date(eventData.start_time.getTime() - IST_OFFSET)
-          : null;
-        const normalizedEndTime = eventData.end_time
-          ? new Date(eventData.end_time.getTime() - IST_OFFSET)
-          : null;
 
         const newEvent = {
           ...eventData,
-          start_time: normalizedStartTime,
-          end_time: normalizedEndTime,
           latitude: locationCoords[eventData.locationId].lat,
           longitude: locationCoords[eventData.locationId].lng,
           locationName: locationCoords[eventData.locationId].name,

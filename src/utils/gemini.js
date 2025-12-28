@@ -1,7 +1,7 @@
 const VALID_LOCATIONS = [
   "MAIN_BUILDING",
   "LHC_A",
-  "LHC_B",
+  "LHC_D",
   "LHC_C",
   "CCC",
   "DIGITAL_LIBRARY",
@@ -53,7 +53,8 @@ Task:
 5. Don't invent start_time and end_time .Extract start and end times from the text (if start time is not mentioned then make start time and end time both as null ) and then express them in Date object format.
 6. Create a short 1-sentence description .
 7. If year is not mentioned assume it's the system current year.
-8.Assume all times are in Indian Standard Time (IST). Do not convert to UTC.
+8. Assume all times are in Indian Standard Time (IST). Do not convert to UTC.
+9. Extract registration link if present (Google Forms, Unstop, any URL). If no link found, set to null.
 
 Output JSON ONLY (no markdown):
 {
@@ -65,6 +66,7 @@ Output JSON ONLY (no markdown):
     "start_time": timestamp || null,
     "end_time":timestamp || null,
     "club":"string(optional)",
+    "registrationLink": "string(url) || null",
 }
   `;
 
@@ -160,6 +162,7 @@ Output JSON ONLY (no markdown):
       start_time: startTime,
       end_time: endTime,
       club: parsed.club ? parsed.club.toUpperCase() : null,
+      registrationLink: parsed.registrationLink || null,
     };
   } catch (error) {
     console.error("Gemini Error:", error);

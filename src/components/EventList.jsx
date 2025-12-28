@@ -124,6 +124,17 @@ const EventList = ({ events = [], selected = 'upcoming', setSelected = () => {},
                               )}
                             </div>
                           )}
+                          {event.registrationLink && (
+                            <a
+                              href={event.registrationLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="mt-2 inline-block text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              🔗 Register Now
+                            </a>
+                          )}
                         </div>
                         {event.hasFood && (
                           <span className="ml-2 px-2 py-1 bg-yellow-400 text-black text-xs font-bold rounded-full whitespace-nowrap">
@@ -264,6 +275,17 @@ const EventList = ({ events = [], selected = 'upcoming', setSelected = () => {},
                                     </p>
                                   )}
                                 </div>
+                              )}
+                              {event.registrationLink && (
+                                <a
+                                  href={event.registrationLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="mt-2 inline-block text-xs text-indigo-600 hover:text-indigo-800 font-semibold underline"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  🔗 Register Now
+                                </a>
                               )}
                             </div>
                             {event.hasFood && (
