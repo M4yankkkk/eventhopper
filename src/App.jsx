@@ -169,7 +169,7 @@ function App() {
 
   const e = mapping[selectedFilter] || normalizedEvents;
   const selectedEvents =
-    club == "ALL" ? e : e.filter((event) => event.club === club);
+    club == "ALL" ? e : e.filter((event) => event.club?.toUpperCase() === club.toUpperCase());
 
   const signIn = async () => {
     if (isSigningIn) {

@@ -10,11 +10,13 @@ const EventList = ({ events = [], selected = 'upcoming', setSelected = () => {},
     "ACM",
     "IE",
     "ISTE",
+    "IRIS",
     "WEC",
     "ROBOCON",
     "GENESIS",
     "YOGA",
     "E-CELL",
+    "ARTISTS FORUM"
   ];
   return (
     <>

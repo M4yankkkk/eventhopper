@@ -55,8 +55,19 @@ const EventInput = ({ onClose = () => {} }) => {
         if(!eventData.title){
           throw new Error("Event title is missing or invalid.");
         }
+        // Normalize timestamps: subtract 5.5 hours to account for IST offset
+        const IST_OFFSET = 5.5 * 60 * 60 * 1000; // 5.5 hours in milliseconds
+        const normalizedStartTime = eventData.start_time 
+          ? new Date(eventData.start_time.getTime() - IST_OFFSET)
+          : null;
+        const normalizedEndTime = eventData.end_time
+          ? new Date(eventData.end_time.getTime() - IST_OFFSET)
+          : null;
+
         const newEvent = {
           ...eventData,
+          start_time: normalizedStartTime,
+          end_time: normalizedEndTime,
           latitude: locationCoords[eventData.locationId].lat,
           longitude: locationCoords[eventData.locationId].lng,
           locationName: locationCoords[eventData.locationId].name,
@@ -67,7 +78,10 @@ const EventInput = ({ onClose = () => {} }) => {
         const querySnapshot=await getDocs(collection(db,'events'));
         const exists=querySnapshot.docs.some(doc=>{
           const data=doc.data();
-          return (data.title===newEvent.title && data.start_time===newEvent.start_time && data.locationId===newEvent.locationId);
+          // Compare timestamps as ISO strings for accurate matching
+          const existingStart = data.start_time ? (data.start_time.toDate?.().toISOString() || data.start_time.toString()) : null;
+          const newStart = newEvent.start_time ? newEvent.start_time.toISOString() : null;
+          return (data.title===newEvent.title && existingStart===newStart && data.locationId===newEvent.locationId);
         })
         if (!exists)
           await addDoc(collection(db, "events"), newEvent);

@@ -158,7 +158,7 @@ Output JSON ONLY (no markdown):
       description: parsed.description || "",
       start_time: startTime,
       end_time: endTime,
-      club: parsed.club || null,
+      club: parsed.club ? parsed.club.toUpperCase() : null,
     };
   } catch (error) {
     console.error("Gemini Error:", error);
