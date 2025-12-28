@@ -22,7 +22,7 @@ import Logo from "./assets/Logo.svg";
 import MapComponent from "./components/MapComponent";
 import EventInput from "./components/EventInput";
 import EventList from "./components/EventList";
-
+import Dashboard from "./components/Dashboard";
 function App() {
   const NUMBER_OF_EVENTS = 5;
   const [user, setUser] = useState(null);
@@ -30,6 +30,7 @@ function App() {
   const [selectedFilter, setSelectedFilter] = useState("upcoming");
   const [showAddEvent, setShowAddEvent] = useState(false);
   const [isSigningIn, setIsSigningIn] = useState(false);
+  const [dashboard,setDashboard]=useState(false);
   const [club,setClub]=useState("ALL");
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (user) => {
@@ -44,6 +45,7 @@ function App() {
           return;
         }
       }
+      console.log(user);
       setUser(user);
     });
     return () => unsubscribe();
@@ -240,6 +242,13 @@ function App() {
     }
   };
 
+  if(dashboard && user){
+    const upEvents = upcomingEvents.filter((e) =>{return e.createdBy == user.uid;});
+    const pstEvents=pastEvents.filter((e)=>{return e.createdBy==user.uid});
+    const onEvents=ongoingEvents.filter((e)=>{return e.createdBy==user.uid});
+    return <Dashboard user={user} upcomingEvents={upEvents} ongoingEvents={onEvents} pastEvents={pstEvents} setDashboard={setDashboard}/>
+  }
+
   return (
     <main className="h-screen w-screen bg-white text-slate-900 relative overflow-hidden">
       {/* Navbar */}
@@ -251,17 +260,23 @@ function App() {
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <img
-                  src={user.photoURL}
-                  alt={user.displayName}
-                  className="h-8 w-8 rounded-full border-2 border-indigo-500"
-                />
+                <button
+                  onClick={() => setDashboard(true)}
+                  className="rounded-lg bg-blue-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-blue-800"
+                >
+                  Dashboard
+                </button>
                 <button
                   onClick={logOut}
                   className="rounded-lg bg-red-600 px-3 py-2 text-xs sm:text-sm font-semibold text-white shadow-sm hover:bg-red-500"
                 >
                   Logout
                 </button>
+                <img
+                  src={user.photoURL}
+                  alt={user.displayName}
+                  className="h-8 w-8 rounded-full border-2 border-indigo-500"
+                />
               </>
             ) : (
               <button

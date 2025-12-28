@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { parseEvent } from '../utils/gemini';
 import { db, auth } from '../firebase';
 import { collection, getDocs, query, addDoc, serverTimestamp } from 'firebase/firestore';
+import { getAuth } from "firebase/auth";
 
 const locationCoords = {
   MAIN_BUILDING: { lat: 13.010909, lng: 74.794371, name: "Main Building" },
@@ -32,7 +33,9 @@ const EventInput = ({ onClose = () => {} }) => {
   const [text, setText] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  
+  const auth = getAuth();
+  const user = auth.currentUser;
+  if(!user) throw new Error("You need to log in to post events");
   const handleSubmit = async () => {
     if (!text.trim()) return;
     if (!auth.currentUser) {
@@ -73,7 +76,7 @@ const EventInput = ({ onClose = () => {} }) => {
           locationName: locationCoords[eventData.locationId].name,
           timestamp: serverTimestamp(),
           createdBy: auth.currentUser.uid,
-          createdAt: new Date().toISOString()
+          createdAt: new Date().toISOString(),
         };
         const querySnapshot=await getDocs(collection(db,'events'));
         const exists=querySnapshot.docs.some(doc=>{

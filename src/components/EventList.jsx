@@ -16,7 +16,8 @@ const EventList = ({ events = [], selected = 'upcoming', setSelected = () => {},
     "GENESIS",
     "YOGA",
     "E-CELL",
-    "ARTISTS FORUM"
+    "ARTISTS FORUM",
+    "MUSIC CLUB",
   ];
   return (
     <>
