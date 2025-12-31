@@ -2,9 +2,9 @@
 
 # EventX-A FireBase-Powered,Campus-Connected
 
-<div align="center">
-  [Demo Link](https://eventxnitk.vercel.app/app)
-</div>
+<p align="center">
+  <a href="https://eventxnitk.vercel.app/app">Demo Link</a>
+</p>
 
 ## Overview
 
