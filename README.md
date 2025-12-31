@@ -100,8 +100,7 @@ VITE_GEMINI_API_KEY=your_api_key
 
 
 <img width="1919" height="876" alt="image" src="https://github.com/user-attachments/assets/2f0bc3f8-a63b-45c6-9bd3-226d1b780dea" />
-<img width="1900" height="905" alt="image" src="https://github.com/user-attachments/assets/8da8dae6-4b34-4b2c-8477-8b5d67dce925" />
-
+<img width="1907" height="908" alt="image" src="https://github.com/user-attachments/assets/ebaf7241-29b6-465a-8538-226d401d2530" />
 <img width="1907" height="902" alt="image" src="https://github.com/user-attachments/assets/5ccf53eb-864d-4c45-a36e-6563fe9033fa" />
 <img width="1604" height="836" alt="image" src="https://github.com/user-attachments/assets/96f132d5-2f08-4a2f-b54f-acd04428f365" />
 
