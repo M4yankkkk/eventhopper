@@ -13,13 +13,13 @@ events on a 3D Google Maps view with location-based beacons, bridging the gap be
 
 ### Key Features
 
-- ** Paste-to-Add Events**: Using Gemini, pasted events details are parsed
-- ** Secure NITK only Google Authentication**: using Firebase Auth
-- ** Filter Events**: Based on clubs,food availability and Time(Upcoming,Present and Past Events)
-- ** Maps**: A 3D map with beacons guiding you to every campus event
-- ** Notification**:Timely reminders before every event begins
-- ** Clickable Marker**: Showing full event details
-- ** User Dashboard**: A centralized space where signed‑in users can view, delete(any upcoming event), and track the events they’ve posted.
+- **Paste-to-Add Events**: Using Gemini, pasted events details are parsed
+- **Secure NITK only Google Authentication**: using Firebase Auth
+- **Filter Events**: Based on clubs,food availability and Time(Upcoming,Present and Past Events)
+- **Maps**: A 3D map with beacons guiding you to every campus event
+- **Notification**:Timely reminders before every event begins
+- **Clickable Marker**: Showing full event details
+- **User Dashboard**: A centralized space where signed‑in users can view, delete(any upcoming event), and track the events they’ve posted.
 
 ### Architecture
 
@@ -92,11 +92,11 @@ VITE_GEMINI_API_KEY=your_api_key
 
 ### Key Pages & Components
 
-- ** Landing Page**:Serves as the entry point with platform overview and user authentication.
-- ** Dashboard**:Provides signed‑in users with an overview of their events, with time‑based filters (upcoming, ongoing, past) and the ability to delete upcoming events.
-- ** Event Input**:Allows signed‑in users to create posts, parsed intelligently by Gemini, ensuring only unique events are added.
-- ** Event Display**: Shows all events (upcoming, ongoing, past) with filters by time, food availibility and clubs, plus an integrated map view of event locations.
-- ** 3D Map-component**:Displays events based on selected filters, with interactive beacon markers that reveal event details when clicked.
+- **Landing Page**:Serves as the entry point with platform overview and user authentication.
+- **Dashboard**:Provides signed‑in users with an overview of their events, with time‑based filters (upcoming, ongoing, past) and the ability to delete upcoming events.
+- **Event Input**:Allows signed‑in users to create posts, parsed intelligently by Gemini, ensuring only unique events are added.
+- **Event Display**: Shows all events (upcoming, ongoing, past) with filters by time, food availibility and clubs, plus an integrated map view of event locations.
+- **3D Map-component**:Displays events based on selected filters, with interactive beacon markers that reveal event details when clicked.
 
 
 <img width="1919" height="876" alt="image" src="https://github.com/user-attachments/assets/2f0bc3f8-a63b-45c6-9bd3-226d1b780dea" />
