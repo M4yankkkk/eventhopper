@@ -23,6 +23,15 @@ events on a 3D Google Maps view with location-based beacons, bridging the gap be
 
 ### Architecture
 
-### Core Components
+<img width="1600" height="951" alt="image" src="https://github.com/user-attachments/assets/608f9baf-a98f-4593-9c7a-ef6648a87d87" />
+
+### Use Case Diagram
 
 ### Technology Stack
+
+#### 🎨 Frontend
+- **React**:
+- **Vite**:
+- **Tailwind CSS**:
+
+#### Storage & Data
